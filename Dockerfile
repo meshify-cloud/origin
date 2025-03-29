@@ -19,8 +19,8 @@ RUN cp /usr/bin/ffmpeg ./
 COPY . .
 
 # Exposing ports
-#EXPOSE 8000
-#EXPOSE 1935
+EXPOSE 80
+EXPOSE 1935
 
 # Running the app
 CMD ["node", "index.js"]
