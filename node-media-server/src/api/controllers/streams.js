@@ -13,7 +13,7 @@ function postStreamTrans(req, res, next) {
     config.dashFlags
   ) {
     let transServer = new NodeTransServer(config);
-    console.log(req.body);
+    // console.log(req.body);
     if (transServer) {
       res.json({ message: 'OK Success' });
     } else {
