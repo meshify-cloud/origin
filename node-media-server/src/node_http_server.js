@@ -72,6 +72,17 @@ class NodeHttpServer {
       app.use(Express.static(config.http.webroot));
     }
 
+    // callback test
+    // app.post('/callback/publish', (req, res) => {
+    //   console.warn(req.body)
+    //   res.sendStatus(200)
+    // })
+    // app.post('/callback/unpublish', (req, res) => {
+    //   console.warn(`unpublish`)
+    //   console.warn(req.body)
+    //   res.sendStatus(200)
+    // })
+
     this.httpServer = Http.createServer(app);
 
     if (this.config.https) {

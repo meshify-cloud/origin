@@ -1,19 +1,22 @@
 const NodeMediaServer = require("./node-media-server/src/node_media_server.js");
-const { getStreamKeyFromStreamPath, getArrayFromEnv } = require("./utils");
+const { getStreamKeyFromStreamPath, getApplicationFromStreamPath, getArrayFromEnv } = require("./utils");
 require('dotenv').config();
 const allowOrigin = process.env.ALLOW_ORIGIN || "*";
 const port = Number(process.env.PORT) || 80;
 const rtmpPort = Number(process.env.RTMP_PORT) || 1935;
 const ffmpeg = process.env.FFMPEG || '/usr/bin/ffmpeg';
 const hlsSegmentType = process.env.HLS_SEGMENT_TYPE || 'mpegts';
+const validApplications = getArrayFromEnv('APPLICATIONS');
 const validStreamKeys = getArrayFromEnv('STREAM_KEYS');
+const pushStreamSecret = process.env.PUSH_STREAM_SECRET;
 const allowIPs = getArrayFromEnv('ALLOW_IPS');
 const transcodeTasks = JSON.parse(process.env.TRANS_TASKS || '[]');
 const relayTasks = JSON.parse(process.env.RELAY_TASKS|| '[]');
 const fissionTasks = JSON.parse(process.env.FISSION_TASKS|| '[]');
+const publishCallbackUrl = process.env.PUBLISH_CALLBACK_URL;
+const unpublishCallbackUrl = process.env.UNPUBLISH_CALLBACK_URL;
+
 const createLogger = require("./logger.js");
-
-
 const logLevel = process.env.LOG_LEVEL;
 const logFile = !!process.env.LOG_FILE;
 const logger = createLogger(logLevel || 'warn', logFile);
@@ -92,14 +95,54 @@ nms.on('doneConnect', (id, args) => {
     logger.debug(`[NodeEvent on doneConnect] id=${id} args=${JSON.stringify(args)}`);
 });
 
-nms.on('prePublish', (id, ip, StreamPath, args) => {
-    logger.debug(`[NodeEvent on prePublish] id=${id} ip=${ip} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);
-    let stream_key = getStreamKeyFromStreamPath(StreamPath);
+nms.on('prePublish', (id, ip, streamPath, args) => {
+    logger.debug(`[NodeEvent on prePublish] id=${id} ip=${ip} StreamPath=${streamPath} args=${JSON.stringify(args)}`);
+    const reject = () => {
+        let session = nms.getSession(id);
+        session.reject();
+    }
+    let stream_key = getStreamKeyFromStreamPath(streamPath);
+    let appName = getApplicationFromStreamPath(streamPath);
+    if (validApplications.length > 0 && !validApplications.includes(appName)) {
+        logger.warn(`prePublish reject app ${appName} ip ${ip}`);
+        reject();
+        return;
+    }
     if ((validStreamKeys.length > 0 && !validStreamKeys.includes(stream_key))
         || (allowIPs.length > 0 && !allowIPs.includes(ip))) {
         logger.warn(`prePublish reject stream key ${stream_key} ip ${ip}`);
-        let session = nms.getSession(id);
-        session.reject();
+        reject();
+        return;
+    }
+    if (pushStreamSecret && args["secret"] !== pushStreamSecret) {
+        logger.warn(`prePublish secret not match, stream key ${stream_key} ip ${ip}`);
+        reject();
+        return;
+    }
+    if (publishCallbackUrl) {
+        fetch(publishCallbackUrl, {
+            method: 'POST', // 请求方法
+            headers: {
+                'Content-Type': 'application/json', // 请求头
+            },
+            body: JSON.stringify({
+                action: "on_publish",
+                client_id: id,
+                ip,
+                path: streamPath,
+                args,
+           }),
+        })
+            .then(response => {
+                if (!response.ok) {
+                    logger.warn('Publish Callback Not Allowed');
+                    reject();
+                }
+            })
+            .catch(error => {
+                logger.warn('Publish Callback Error:', error);
+                reject();
+            });
     }
 });
 
@@ -107,8 +150,23 @@ nms.on('postPublish', (id, StreamPath, args) => {
     logger.debug(`[NodeEvent on postPublish] id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);
 });
 
-nms.on('donePublish', (id, StreamPath, args) => {
-    logger.debug(`[NodeEvent on donePublish] id=${id} StreamPath=${StreamPath} args=${JSON.stringify(args)}`);
+nms.on('donePublish', (id, ip, streamPath, args) => {
+    logger.debug(`[NodeEvent on donePublish] id=${id} StreamPath=${streamPath} args=${JSON.stringify(args)}`);
+    if (unpublishCallbackUrl) {
+        fetch(unpublishCallbackUrl, {
+            method: 'POST', // 请求方法
+            headers: {
+                'Content-Type': 'application/json', // 请求头
+            },
+            body: JSON.stringify({
+                action: "on_unpublish",
+                client_id: id,
+                ip,
+                path: streamPath,
+                args,
+            }),
+        })
+    }
 });
 
 nms.on('prePlay', (id, StreamPath, args) => {

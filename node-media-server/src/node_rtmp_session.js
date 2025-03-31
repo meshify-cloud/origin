@@ -1328,7 +1328,7 @@ class NodeRtmpSession {
     if (invokeMessage.streamId == this.publishStreamId) {
       if (this.isPublishing) {
         Logger.log(`[rtmp publish] Close stream. id=${this.id} streamPath=${this.publishStreamPath} streamId=${this.publishStreamId}`);
-        context.nodeEvent.emit('donePublish', this.id, this.publishStreamPath, this.publishArgs);
+        context.nodeEvent.emit('donePublish', this.id, this.ip, this.publishStreamPath, this.publishArgs);
         if (this.isStarting) {
           this.sendStatusMessage(this.publishStreamId, 'status', 'NetStream.Unpublish.Success', `${this.publishStreamPath} is now unpublished.`);
         }
