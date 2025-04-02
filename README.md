@@ -21,3 +21,4 @@ Built on the top of [Node-Media-Server](https://github.com/illuspas/Node-Media-S
 | PUSH_STREAM_SECRET | The stream key secret | No       | ''   |
 | PUBLISH_CALLBACK_URL | When client publish /stream, call the hook, post a body with stream and client info, if valid, the hook must return HTTP code 200(Status OK)  | No       | ''   |
 | UNPUBLISH_CALLBACK_URL | When client stop publish, call the hook, post a body with stream and client info | No       | ''   |
+| HTTP_API_TOKEN | The token to request api server | No       | ''   |

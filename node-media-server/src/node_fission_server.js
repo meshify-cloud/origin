@@ -7,7 +7,6 @@ const Logger = require('./node_core_logger');
 
 const NodeFissionSession = require('./node_fission_session');
 const context = require('./node_core_ctx');
-const { getFFmpegVersion, getFFmpegUrl } = require('./node_core_utils');
 const fs = require('fs');
 const _ = require('lodash');
 const mkdirp = require('mkdirp');

@@ -7,7 +7,6 @@ const Logger = require('./node_core_logger');
 
 const NodeTransSession = require('./node_trans_session');
 const context = require('./node_core_ctx');
-const { getFFmpegVersion, getFFmpegUrl } = require('./node_core_utils');
 const fs = require('fs');
 const _ = require('lodash');
 const mkdirp = require('mkdirp');
@@ -53,6 +52,7 @@ class NodeTransServer {
       let conf = { ...this.config.trans.tasks[i] };
       conf.ffmpeg = this.config.trans.ffmpeg;
       conf.mediaroot = this.config.http.mediaroot;
+      conf.videoroot = this.config.http.videoroot;
       conf.rtmpPort = this.config.rtmp.port;
       conf.streamPath = streamPath;
       conf.streamApp = app;

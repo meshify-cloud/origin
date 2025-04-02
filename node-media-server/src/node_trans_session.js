@@ -32,6 +32,7 @@ class NodeTransSession extends EventEmitter {
     let ac = this.conf.ac || 'copy';
     let inPath = 'rtmp://127.0.0.1:' + this.conf.rtmpPort + this.conf.streamPath;
     let ouPath = `${this.conf.mediaroot}/${this.conf.streamApp}/${this.conf.streamName}`;
+    let ouPathMp4 = `${this.conf.videoroot}`;
     let mapStr = '';
 
     if (this.conf.rtmp && this.conf.rtmpApp) {
@@ -46,9 +47,11 @@ class NodeTransSession extends EventEmitter {
     if (this.conf.mp4) {
       this.conf.mp4Flags = this.conf.mp4Flags ? this.conf.mp4Flags : '';
       let mp4FileName = dateFormat('yyyy-mm-dd-HH-MM-ss') + '.mp4';
-      let mapMp4 = `${this.conf.mp4Flags}${ouPath}/${mp4FileName}|`;
-      mapStr += mapMp4;
-      Logger.log('[Transmuxing MP4] ' + this.conf.streamPath + ' to ' + ouPath + '/' + mp4FileName);
+      let mapMp4 = `${this.conf.mp4Flags}${ouPathMp4}/${mp4FileName}|`;
+      if (fs.existsSync(`${ouPathMp4}/${mp4FileName}`)) {
+        mapStr += mapMp4;
+        Logger.log('[Transmuxing MP4] ' + this.conf.streamPath + ' to ' + ouPathMp4 + '/' + mp4FileName);
+      }
     }
     if (this.conf.hls) {
       this.conf.hlsFlags = this.getConfig('hlsFlags') || '';
@@ -72,7 +75,7 @@ class NodeTransSession extends EventEmitter {
     Array.prototype.push.apply(argv, this.conf.acParam);
     Array.prototype.push.apply(argv, ['-f', 'tee', '-map', '0:a?', '-map', '0:v?', mapStr]);
     argv = argv.filter((n) => { return n; }); //去空
-    
+
     this.ffmpeg_exec = spawn(this.conf.ffmpeg, argv);
     this.ffmpeg_exec.on('error', (e) => {
       Logger.ffdebug(e);

@@ -8,7 +8,6 @@ const Logger = require('./node_core_logger');
 const NodeCoreUtils = require('./node_core_utils');
 const NodeRelaySession = require('./node_relay_session');
 const context = require('./node_core_ctx');
-const { getFFmpegVersion, getFFmpegUrl } = require('./node_core_utils');
 const fs = require('fs');
 const querystring = require('querystring');
 const _ = require('lodash');

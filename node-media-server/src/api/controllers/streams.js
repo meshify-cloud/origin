@@ -1,18 +1,14 @@
 const _ = require('lodash');
 const NodeTransServer = require('../../node_trans_server');
+const {clearDirectory} = require("../utils");
 
 function postStreamTrans(req, res, next) {
   let config = req.body;
   if (
     config.app &&
-    config.hls &&
-    config.ac &&
-    config.vc &&
-    config.hlsFlags &&
-    config.dash &&
-    config.dashFlags
+      (config.hls || config.dash)
   ) {
-    let transServer = new NodeTransServer(config);
+    let transServer = new NodeTransServer(config);   // TODO 删除task
     // console.log(req.body);
     if (transServer) {
       res.json({ message: 'OK Success' });
@@ -160,7 +156,29 @@ function delStream(req, res, next) {
   }
 }
 
+function clean(req, res, next) {
+  const { mediaroot } = this.conf.http;
+  this.sessions.forEach(function(session, id) {
+    session.stop();
+  });
+  const result = clearDirectory(mediaroot);
+  if (result.success) {
+    res.json({
+      success: true,
+      message: result.message,
+      deletedCount: result.deletedCount
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      message: result.message,
+      error: result.error.toString()
+    });
+  }
+}
+
 exports.delStream = delStream;
 exports.getStreams = getStreams;
 exports.getStream = getStream;
 exports.postStreamTrans = postStreamTrans;
+exports.clean = clean;

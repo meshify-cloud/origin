@@ -13,7 +13,7 @@ const WebSocket = require('ws');
 const Express = require('express');
 const H2EBridge = require('http2-express');
 const bodyParser = require('body-parser');
-const basicAuth = require('basic-auth-connect');
+// const basicAuth = require('basic-auth-connect');
 const NodeFlvSession = require('./node_flv_session');
 const HTTP_PORT = 80;
 const HTTPS_PORT = 443;
@@ -24,6 +24,8 @@ const context = require('./node_core_ctx');
 const streamsRoute = require('./api/routes/streams');
 const serverRoute = require('./api/routes/server');
 const relayRoute = require('./api/routes/relay');
+const videoRoute = require('./api/routes/video');
+const {authenticateToken} = require("./api/utils");
 
 class NodeHttpServer {
   constructor(config) {
@@ -58,12 +60,17 @@ class NodeHttpServer {
     }
 
     if (this.config.http.api !== false) {
-      if (this.config.auth && this.config.auth.api) {
-        app.use(['/api/*', '/static/*', '/admin/*'], basicAuth(this.config.auth.api_user, this.config.auth.api_pass));
+      context.conf = config;
+      // if (this.config.auth && this.config.auth.api) {
+      //   app.use(['/api/*', '/static/*', '/admin/*'], basicAuth(this.config.auth.api_user, this.config.auth.api_pass));
+      // }
+      if (this.config.http.httpApiToken) {
+        app.use(['/api/*', '/admin/*'], authenticateToken(this.config.http.httpApiToken));
       }
       app.use('/api/streams', streamsRoute(context));
       app.use('/api/server', serverRoute(context));
       app.use('/api/relay', relayRoute(context));
+      app.use('/api/video', videoRoute(context));
     }
 
     app.use(Express.static(path.join(__dirname + '/public')));

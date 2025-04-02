@@ -1,6 +1,7 @@
 const NodeMediaServer = require("./node-media-server/src/node_media_server.js");
 const { getStreamKeyFromStreamPath, getApplicationFromStreamPath, getArrayFromEnv } = require("./utils");
 require('dotenv').config();
+
 const allowOrigin = process.env.ALLOW_ORIGIN || "*";
 const port = Number(process.env.PORT) || 80;
 const rtmpPort = Number(process.env.RTMP_PORT) || 1935;
@@ -15,6 +16,7 @@ const relayTasks = JSON.parse(process.env.RELAY_TASKS|| '[]');
 const fissionTasks = JSON.parse(process.env.FISSION_TASKS|| '[]');
 const publishCallbackUrl = process.env.PUBLISH_CALLBACK_URL;
 const unpublishCallbackUrl = process.env.UNPUBLISH_CALLBACK_URL;
+const httpApiToken = process.env.HTTP_API_TOKEN;
 
 const createLogger = require("./logger.js");
 const logLevel = process.env.LOG_LEVEL;
@@ -25,6 +27,8 @@ const httpConfig = {
     port, // HTTP port
     allow_origin: allowOrigin, // Allow requests from any origin (you may restrict this as needed)
     mediaroot: "./media", // Directory where the server will look for media files
+    videoroot: "./videos",
+    httpApiToken,
 };
 
 const rtmpConfig = {
@@ -52,30 +56,50 @@ if (transcodeTasks.length > 0) {
             hls: true,
             hlsFlags: `[start_number=1:hls_segment_type=${hlsSegmentType}:strftime=1:hls_time=4:hls_list_size=8:hls_flags=delete_segments:hls_flags=split_by_time]`,
             hlsKeep: false,
+            // mp4: true,
         },
     ];
 }
 
 // console.warn(transformationConfig)
 
+const relayConfig = {
+    ffmpeg,
+};
+if (relayTasks.length > 0) {
+    relayConfig.tasks = [...relayTasks];
+} else {
+    relayConfig.tasks = [
+        {
+            app: 'live',
+            mode: 'static',
+            edge: 'rtmp://liveuhd.spskjmtaz.site:80/static/h5',
+            name: 'sintel'
+        },
+        //     {
+        //     app: 'live',
+        //     mode: 'static',
+        //     edge: './videos/2025-04-01-17-50-15.mp4',
+        //     name: 'sintel',
+        //     loop: true,
+        // }
+    ];
+}
+
+const fissionConfig = {
+    ffmpeg,
+};
+if (fissionTasks.length > 0) {
+    fissionConfig.tasks = [...fissionTasks];
+}
+
 const config = {
     http: httpConfig,
     rtmp: rtmpConfig,
     trans: transformationConfig,
+    relay: relayConfig,
+    fission: fissionConfig,
 };
-
-if (relayTasks.length > 0) {
-    config.relay = {
-        ffmpeg,
-        tasks: [...relayTasks]
-    }
-}
-if (fissionTasks.length > 0) {
-    config.fission = {
-        ffmpeg,
-        tasks: [...fissionTasks]
-    }
-}
 
 const nms = new NodeMediaServer(config);
 
