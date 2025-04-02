@@ -50,7 +50,7 @@ if (transcodeTasks.length > 0) {
         {
             app: "live",
             vc: "libx264",
-            vcParam: ['-vb', '1000k'],
+            vcParam: ['-vb', '1500k'],
             ac: "aac",
             acParam: ['-ab', '64k', '-ac', '1', '-ar', '44100'],
             hls: true,
@@ -68,23 +68,24 @@ const relayConfig = {
 };
 if (relayTasks.length > 0) {
     relayConfig.tasks = [...relayTasks];
-} else {
-    relayConfig.tasks = [
-        {
-            app: 'live',
-            mode: 'static',
-            edge: 'rtmp://liveuhd.spskjmtaz.site:80/static/h5',
-            name: 'sintel'
-        },
-        //     {
-        //     app: 'live',
-        //     mode: 'static',
-        //     edge: './videos/2025-04-01-17-50-15.mp4',
-        //     name: 'sintel',
-        //     loop: true,
-        // }
-    ];
 }
+// else {
+//     relayConfig.tasks = [
+//         {
+//             app: 'live',
+//             mode: 'static',
+//             edge: 'rtmp://liveuhd.spskjmtaz.site:80/static/h5',
+//             name: 'sintel'
+//         },
+//         //     {
+//         //     app: 'live',
+//         //     mode: 'static',
+//         //     edge: './videos/2025-04-01-17-50-15.mp4',
+//         //     name: 'sintel',
+//         //     loop: true,
+//         // }
+//     ];
+// }
 
 const fissionConfig = {
     ffmpeg,
@@ -98,7 +99,7 @@ const config = {
     rtmp: rtmpConfig,
     trans: transformationConfig,
     relay: relayConfig,
-    fission: fissionConfig,
+    fission: fissionTasks.length > 0 ? fissionConfig : undefined,
 };
 
 const nms = new NodeMediaServer(config);
