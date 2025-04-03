@@ -6,7 +6,10 @@ const { clearDirectory } = require("../utils");
 
 module.exports = (context) => {
     const { videoroot } = context.conf.http;
-
+    if (!fs.existsSync(videoroot)) {
+        fs.mkdirSync(videoroot, { recursive: true });
+        // console.log(`文件夹 ${videoroot} 已创建`);
+    }
     // 配置multer用于文件上传
     const storage = multer.diskStorage({
         destination: (req, file, cb) => {

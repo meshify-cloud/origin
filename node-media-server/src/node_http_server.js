@@ -37,7 +37,7 @@ class NodeHttpServer {
     app.use(bodyParser.json());
 
     app.use(bodyParser.urlencoded({ extended: true }));
-
+    app.disable('x-powered-by');
     app.all('*', (req, res, next) => {
       const { allow_origin } = this.config.http;
       res.header('Access-Control-Allow-Origin', allow_origin);
